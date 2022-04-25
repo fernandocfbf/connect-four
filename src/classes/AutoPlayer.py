@@ -40,10 +40,23 @@ class AutoPlayer(Player):
                 res.append(column)
         return res
 
-    def _min(self, move):
+    def _min(self, board, move, alpha, beta, depth):
+        '''
+        input:
+        output:
+        description:
+        '''
+
+        for move in self.sucessors(board):
+            move_score = min(move_score, self._max(board, move, alpha, beta, depth))
         return -1
     
-    def _max(self, move):
+    def _max(self, board, move, alpha, beta, depth):
+        '''
+        input:
+        output:
+        description:
+        '''
         return 1
 
     def minimax(self, board, depth):
