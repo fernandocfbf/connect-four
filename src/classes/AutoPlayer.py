@@ -1,3 +1,4 @@
+import math
 import random
 
 from src.classes.Player import Player
@@ -40,43 +41,39 @@ class AutoPlayer(Player):
                 res.append(column)
         return res
 
-    def _min(self, board, move, alpha, beta, depth):
+    def _min(self, board, move, alpha, beta, depth, playerCode):
         '''
         input:
         output:
         description:
         '''
-
-        for move in self.sucessors(board):
-            move_score = min(move_score, self._max(board, move, alpha, beta, depth))
-        return -1
+        if depth == 0:
+            return random.randint(0, 10), move
+        for mv in self.sucessors(playerCode, board):
+            new_beta, new_move = self._max(board, mv, alpha, beta, depth-1, playerCode)
+            if (new_beta < beta):
+                beta = new_beta
+                move = new_move
+            if (beta <= alpha):
+                break
+        return beta, move
     
-    def _max(self, board, move, alpha, beta, depth):
+    def _max(self, board, move, alpha, beta, depth, playerCode):
         '''
         input:
         output:
         description:
         '''
-        return 1
-
-    def minimax(self, board, depth):
-        '''
-        input
-        output:
-        description:
-        '''
-        alpha, beta, action = None
-        for move in self.sucessors(board):
-            move_score = self._min(move)
-
-            if alpha == None:
-                alpha = move
-                action = move_score
-
-            elif move_score > alpha:
-                alpha = move
-                action = move_score
-        return action
+        if depth == 0:
+            return random.randint(0, 10), move
+        for mv in self.sucessors(playerCode, board):
+            new_alpha, new_move = self._min(board, mv, alpha, beta, depth-1, playerCode)
+            if (new_alpha > alpha):
+                alpha = new_alpha
+                move = new_move
+            if (alpha >= beta):
+                break
+        return alpha, move
 
     #@Override
     def name(self):
@@ -89,10 +86,6 @@ class AutoPlayer(Player):
     
     #@Override
     def move(self, playerCode, board):
-        isPossible = False
-        while not(isPossible):
-            number = random.randint(0, 6) 
-            isPossible = self.isPossibleMove(board, number)
-        return number
-
+        _, action = self._max(board, None, -math.inf, math.inf, playerCode, 1)
+        return action
         
