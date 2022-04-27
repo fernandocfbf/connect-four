@@ -4,14 +4,9 @@ import copy
 import numpy as np
 from termcolor import colored
 
-from pyparsing import col
-
 from src.classes.Player import Player
 
 class AutoPlayer(Player):
-
-    def __init__(self, co):
-        self.co = co
 
     def isPossibleMove(self, board, column):
         '''
@@ -35,6 +30,16 @@ class AutoPlayer(Player):
             return 2
         return 1
 
+    def movement(self, player, board, column):
+        result_board = np.matrix(board)
+        for i in range(5,-2,-1):
+            if (board[i,column] == 0):
+                break
+        if(i<0):
+            return None
+        result_board[i, column] = player
+        return result_board
+
     def sucessors(self, playerCode, board):
         '''
         input: player code [int], game board [matriz (6 x 7)]
@@ -42,27 +47,12 @@ class AutoPlayer(Player):
         description: checks all possible next states for
             the game, and return in a list
         '''
-        res = list()
-        for column in range(0, 7):
-            check = self.isPossibleMove(board, column)
-            if check:
-                res.append(column)
-        return res
-
-    def printSymbol(self, number):
-        if number==1:
-            return colored('●', 'yellow')
-        elif number==2:
-            return colored('■', 'red')
-        else: 
-            return ' '
-
-    def printBoard(self, board): 
-        for lin in range(0,6):
-            for col in range(0,7):
-                print(self.printSymbol(board[lin][col])+" | ", end='')
-            print('')    
-        print('\n')
+        suc = []
+        for i in range(0,7):
+            b = self.movement(playerCode, board, i)
+            if(b is not None):
+                suc.append({'board':b, 'action':i})
+        return suc
 
     def calculateScore(self, x, y, board, playerCode):
         round_positions = [ 
@@ -83,39 +73,17 @@ class AutoPlayer(Player):
                         score -= 1
         return score
 
-
-    def eval(self, playerCode, board):
-        heat_map = np.zeros( (6,7) )
+    def calculateHeapMap(self, playerCode, board):
+        heat_map = np.zeros((6,7))
+        board_list = copy.deepcopy(board).tolist()
         board_score = 0
-        for row in range(len(board)):
-            for column in range(len(board[row])):
-                heat_map[row][column] = self.calculateScore(row, column, board, playerCode)
+        for row in range(len(board_list)):
+            for column in range(len(board_list[row])):
+                heat_map[row][column] = self.calculateScore(row, column, board_list, playerCode)
         for row in heat_map:
             board_score += sum(row)
-        
-        print("BOARD")
-        self.printBoard(board)
-        print("SCORE -> ", board_score)
-
         return board_score
 
-    def _min(self, board, move, alpha, beta, depth, playerCode):
-        '''
-        input:
-        output:
-        description:
-        '''
-        if depth == 0:
-            return self.eval(playerCode, board), move
-        for mv in self.sucessors(playerCode, board):
-            new_beta, new_move = self._max(board, mv, alpha, beta, depth-1, playerCode)
-            if (new_beta < beta):
-                beta = new_beta
-                move = new_move
-            if (beta <= alpha):
-                break
-        return beta, move
-    
     def _max(self, board, move, alpha, beta, depth, playerCode):
         '''
         input:
@@ -123,15 +91,32 @@ class AutoPlayer(Player):
         description:
         '''
         if depth == 0:
-            return random.randint(0, 10), move
+            return self.calculateHeapMap(playerCode, board), move
         for mv in self.sucessors(playerCode, board):
-            new_alpha, new_move = self._min(board, mv, alpha, beta, depth-1, playerCode)
+            new_alpha, new_move = self._min(mv["board"], mv["action"], alpha, beta, depth-1, playerCode)
             if (new_alpha > alpha):
                 alpha = new_alpha
                 move = new_move
             if (alpha >= beta):
                 break
         return alpha, move
+    
+    def _min(self, board, move, alpha, beta, depth, playerCode):
+        '''
+        input:
+        output:
+        description:
+        '''
+        if depth == 0:
+            return self.calculateHeapMap(playerCode, board), move
+        for mv in self.sucessors(playerCode, board):
+            new_beta, new_move = self._max(mv["board"], mv["action"], alpha, beta, depth-1, playerCode)
+            if (new_beta < beta):
+                beta = new_beta
+                move = new_move
+            if (beta <= alpha):
+                break
+        return beta, move
 
     #@Override
     def name(self):
@@ -144,13 +129,6 @@ class AutoPlayer(Player):
     
     #@Override
     def move(self, playerCode, board):
-        if self.co < 2:
-            isPossible = False
-            while not(isPossible):
-                number = random.randint(0, 6) 
-                isPossible = self.isPossibleMove(board, number)
-            self.co += 1
-            return number
         _, action = self._max(board, None, -math.inf, math.inf, 5, playerCode)
         return action
         
