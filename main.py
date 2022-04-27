@@ -4,7 +4,7 @@ from src.classes.RandomPlayer import RandomPlayer
 from src.classes.BarthPlayer import BarthPlayer
 
 def main():
-    FourInRow(AutoPlayer(), BarthPlayer()).game()
+    FourInRow(AutoPlayer(), RandomPlayer()).game()
 
 if __name__ == '__main__':
     main()

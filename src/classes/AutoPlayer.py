@@ -83,6 +83,71 @@ class AutoPlayer(Player):
         for row in heat_map:
             board_score += sum(row)
         return board_score
+    
+    def countLinks(self, playerCode, board, typeLink):
+        retorno = {"2": 0, "3": 0, "4": 0}
+        if typeLink == "row":
+            for i in range(6):
+                counter = 0
+                for j in range(6):
+                    if ((board[i, j] == playerCode) and (board[i, j] == board[i, j + 1])):
+                        counter = counter + 1
+                    else:
+                        counter = 0
+                    if (counter==1):
+                        retorno['2'] = retorno['2'] + 1
+                    if (counter==2):
+                        retorno['3'] = retorno['3'] + 1
+                    if (counter==3):
+                        retorno['4'] = retorno['4'] + 1
+        elif typeLink == "column":
+            for i in range(6):
+                counter = 0
+                for j in range(5):
+                    if ((board[j, i] == playerCode) and (board[j,i] == board[j+1,i])):
+                        counter = counter + 1
+                    else:
+                        counter = 0
+                    if (counter==1):
+                        retorno['2'] = retorno['2'] + 1
+                    if (counter==2):
+                        retorno['3'] = retorno['3'] + 1
+                    if (counter==3):
+                        retorno['4'] = retorno['4'] + 1
+        else:
+            for k in range(-2,4):
+                counter = 0
+                x = np.diag(board, k=k)
+                for i in range(0,len(x)-1):
+                    if ((x[i] == playerCode) and (x[i] == x[i+1])):
+                        counter = counter + 1
+                    else:
+                        counter = 0
+                    if (counter==1):
+                        retorno['2'] = retorno['2'] + 1
+                    if (counter==2):
+                        retorno['3'] = retorno['3'] + 1
+                    if (counter==3):
+                        retorno['4'] = retorno['4'] + 1
+        return retorno
+
+    def agregateAllResults(self, countLinksObject):
+        return countLinksObject["2"] + countLinksObject["3"]*10000 + countLinksObject["4"]*100000
+    
+    def eval(self, playerCode, board):
+        oppCode = self.getOpponentCode(playerCode)
+        heatMap = self.calculateHeapMap(playerCode, board)
+
+        playerCounterRow = self.agregateAllResults(self.countLinks(playerCode, board, "row"))
+        playerCounterCol = self.agregateAllResults(self.countLinks(playerCode, board, "column"))
+        playerCounterDiag = self.agregateAllResults(self.countLinks(playerCode, board, "diag"))
+        totalPlayer = playerCounterRow + playerCounterCol + playerCounterDiag
+
+        opponentCounterRow = self.agregateAllResults(self.countLinks(oppCode, board, "row"))
+        opponentCounterCol = self.agregateAllResults(self.countLinks(oppCode, board, "column"))
+        opponentCounterDiag = self.agregateAllResults(self.countLinks(oppCode, board, "diag"))
+        totalOpponent = opponentCounterRow + opponentCounterCol + opponentCounterDiag
+        return totalPlayer - totalOpponent + heatMap
 
     def _max(self, board, move, alpha, beta, depth, playerCode):
         '''
@@ -91,7 +156,7 @@ class AutoPlayer(Player):
         description:
         '''
         if depth == 0:
-            return self.calculateHeapMap(playerCode, board), move
+            return self.eval(playerCode, board), move
         for mv in self.sucessors(playerCode, board):
             new_alpha, new_move = self._min(mv["board"], mv["action"], alpha, beta, depth-1, playerCode)
             if (new_alpha > alpha):
@@ -108,7 +173,7 @@ class AutoPlayer(Player):
         description:
         '''
         if depth == 0:
-            return self.calculateHeapMap(playerCode, board), move
+            return self.eval(playerCode, board), move
         for mv in self.sucessors(playerCode, board):
             new_beta, new_move = self._max(mv["board"], mv["action"], alpha, beta, depth-1, playerCode)
             if (new_beta < beta):
@@ -117,6 +182,38 @@ class AutoPlayer(Player):
             if (beta <= alpha):
                 break
         return beta, move
+
+    def checkWinningMove(self, playerCode, board):
+        for i in range(6):
+            counter = 0
+            for j in range(6):
+                if ((board[i, j] == playerCode) and (board[i, j] == board[i, j + 1])):
+                    counter = counter + 1
+                else:
+                    counter = 0
+
+                if counter == 3:
+                    return j+1
+        for i in range(6):
+            counter = 0
+            for j in range(5):
+                if ((board[j, i] == playerCode) and (board[j,i] == board[j+1,i])):
+                    counter = counter + 1
+                else:
+                    counter = 0
+                if counter == 3:
+                    return i
+        for k in range(-2,4):
+            counter = 0
+            x = np.diag(board, k=k)
+            for i in range(0,len(x)-1):
+                if ((x[i] == playerCode) and (x[i] == x[i+1])):
+                    counter = counter + 1
+                else:
+                    counter = 0
+                if counter == 3:
+                    return i+1
+        return False
 
     #@Override
     def name(self):
@@ -129,6 +226,13 @@ class AutoPlayer(Player):
     
     #@Override
     def move(self, playerCode, board):
-        _, action = self._max(board, None, -math.inf, math.inf, 5, playerCode)
+        try_win = self.checkWinningMove(playerCode, board) 
+        if (try_win != False):
+            return try_win
+        check_loss = self.checkWinningMove(self.getOpponentCode(playerCode), board) 
+        print(check_loss)
+        if (check_loss != False):
+            return check_loss
+        _, action = self._max(board, None, -math.inf, math.inf, 1, playerCode)
         return action
         
