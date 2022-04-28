@@ -304,9 +304,9 @@ class AutoPlayer(Player):
         columnForOppWin = self.simulatePossibilities(self.getOpponentCode(playerCode), board)
 
         if columnForWin != -1:
-            return columnForWin
+            return None, columnForWin
         if columnForOppWin != -1:
-            return columnForOppWin
+            return None, columnForOppWin
         _, action = self.negamax(board, None, -9999999, 9999999, 1, playerCode)
         return None, action
         
