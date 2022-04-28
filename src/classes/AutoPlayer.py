@@ -82,7 +82,7 @@ class AutoPlayer(Player):
                 heat_map[row][column] = self.calculateScore(row, column, board_list, playerCode)
         for row in heat_map:
             board_score += sum(row)
-        return board_score
+        return board_score*10
     
     def countLinks(self, playerCode, board, typeLink):
         retorno = {"2": 0, "3": 0, "4": 0}
@@ -183,36 +183,93 @@ class AutoPlayer(Player):
                 break
         return beta, move
 
-    def checkWinningMove(self, playerCode, board):
+    def findDiff(self, board1, board2):
+        for i in range(len(board1)):
+            for j in range(len(board1[i])):
+                if board1[i][j] != board2[i][j]:
+                    return j
+
+    def simulateMovement(self, playerCode, column, board):
+        copy_board = copy.deepcopy(board)
+        for i in range(5,-2,-1):
+            if (copy_board[i,column] == 0):
+                break
+        if self.isPossibleMove(copy_board, column):
+            copy_board[i, column] = playerCode
+        return copy_board
+
+    def simulatePossibilities(self, playerCode, board):
+        board_to_list = copy.deepcopy(board).tolist()
+        for i in range(7):
+            possibility = self.simulateMovement(playerCode, i, board)
+            win = self.endOfGame(possibility)
+            if win == True:
+                possibility_to_list = copy.deepcopy(possibility).tolist()
+                get_column = self.findDiff(board_to_list, possibility_to_list)
+                return get_column
+        return -1
+
+    def endOfGame(self, board):
         for i in range(6):
+            current = None
             counter = 0
             for j in range(6):
-                if ((board[i, j] == playerCode) and (board[i, j] == board[i, j + 1])):
-                    counter = counter + 1
+                if ((board[i, j] in (1,2)) and (board[i, j] == board[i, j + 1])):
+                    if (board[i, j]==current):
+                        counter = counter + 1
+                        current = board[i, j]
+                    else:
+                        counter = 1
+                        current = board[i, j]
                 else:
                     counter = 0
-
-                if counter == 3:
-                    return j+1
-        for i in range(6):
+                if (counter==3):
+                    return True
+        for i in range(7):
+            current=None
             counter = 0
             for j in range(5):
-                if ((board[j, i] == playerCode) and (board[j,i] == board[j+1,i])):
-                    counter = counter + 1
+                if ((board[j, i] in (1,2)) and (board[j,i] == board[j+1,i])):
+                    if(board[j,i]==current):
+                        counter = counter + 1
+                        current = board[j,i]
+                    else:
+                        counter = 1
+                        current = board[j,i]
                 else:
                     counter = 0
-                if counter == 3:
-                    return i
+                if (counter == 3):
+                    return True
         for k in range(-2,4):
+            current = None
             counter = 0
             x = np.diag(board, k=k)
             for i in range(0,len(x)-1):
-                if ((x[i] == playerCode) and (x[i] == x[i+1])):
-                    counter = counter + 1
-                else:
-                    counter = 0
-                if counter == 3:
-                    return i+1
+                if ((x[i] != 0) and (x[i] == x[i+1])):
+                    if(x[i] == current):
+                        counter = counter + 1
+                        current = x[i]
+                    else:
+                        counter = 1
+                        current = x[i]
+                if (counter == 3):
+                    return True
+        temp = board[::-1]
+        for k in range(-2,4):
+            current = None
+            counter = 0
+            x = np.diag(temp, k=k)
+            for i in range(0,len(x)-1):
+                if ((x[i] != 0) and (x[i] == x[i+1])):
+                    if(x[i] == current):
+                        counter = counter + 1
+                        current = x[i]
+                    else:
+                        counter = 1
+                        current = x[i]
+                if (counter == 3):
+                    return True
+
         return False
 
     #@Override
@@ -226,13 +283,13 @@ class AutoPlayer(Player):
     
     #@Override
     def move(self, playerCode, board):
-        try_win = self.checkWinningMove(playerCode, board) 
-        if (try_win != False):
-            return try_win
-        check_loss = self.checkWinningMove(self.getOpponentCode(playerCode), board) 
-        print(check_loss)
-        if (check_loss != False):
-            return check_loss
-        _, action = self._max(board, None, -math.inf, math.inf, 1, playerCode)
+        columnForWin = self.simulatePossibilities(playerCode, board)
+        columnForOppWin = self.simulatePossibilities(self.getOpponentCode(playerCode), board)
+
+        if columnForWin != -1:
+            return columnForWin
+        if columnForOppWin != -1:
+            return columnForOppWin
+        _, action = self._max(board, None, -math.inf, math.inf, 5, playerCode)
         return action
         
