@@ -5,8 +5,8 @@ from src.classes.AutoPlayer import AutoPlayer
 from src.classes.ManualPlayer import ManualPlayer
 
 players = [
-    AutoPlayer(),
-    RandomPlayer()]
+    RandomPlayer(),
+    AutoPlayer()]
     
 points = {}
 for p in players:
