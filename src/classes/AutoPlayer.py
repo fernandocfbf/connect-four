@@ -182,6 +182,24 @@ class AutoPlayer(Player):
             if (beta <= alpha):
                 break
         return beta, move
+    
+    def negamax(self, board, move, alpha, beta, depth, playerCode):
+        if depth == 0:
+            return self.eval(playerCode, board), move
+        score = -math.inf
+        best_move = None
+        for mv in self.sucessors(playerCode, board):
+            new_score, new_action = self.negamax(mv["board"], mv["action"], -beta, -alpha, depth-1, playerCode)
+            if (new_score > score):
+                score = new_score
+                best_move = new_action
+
+            #pruning
+            if score > alpha:
+                alpha = score
+            if alpha >= beta:
+                break
+        return score, best_move
 
     def findDiff(self, board1, board2):
         for i in range(len(board1)):
@@ -290,6 +308,6 @@ class AutoPlayer(Player):
             return columnForWin
         if columnForOppWin != -1:
             return columnForOppWin
-        _, action = self._max(board, None, -math.inf, math.inf, 5, playerCode)
+        _, action = self.negamax(board, None, -9999999, 9999999, 5, playerCode)
         return action
         
