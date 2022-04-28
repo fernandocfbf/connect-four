@@ -2,7 +2,6 @@ import math
 import random
 import copy
 import numpy as np
-from termcolor import colored
 
 from src.classes.Player import Player
 
@@ -186,7 +185,7 @@ class AutoPlayer(Player):
     def negamax(self, board, move, alpha, beta, depth, playerCode):
         if depth == 0:
             return self.eval(playerCode, board), move
-        score = -math.inf
+        score = -9999999
         best_move = None
         for mv in self.sucessors(playerCode, board):
             new_score, new_action = self.negamax(mv["board"], mv["action"], -beta, -alpha, depth-1, playerCode)
@@ -308,6 +307,6 @@ class AutoPlayer(Player):
             return columnForWin
         if columnForOppWin != -1:
             return columnForOppWin
-        _, action = self.negamax(board, None, -9999999, 9999999, 5, playerCode)
-        return action
+        _, action = self.negamax(board, None, -9999999, 9999999, 1, playerCode)
+        return None, action
         

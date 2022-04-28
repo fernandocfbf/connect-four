@@ -23,6 +23,6 @@ class RandomPlayer(Player):
         while not(isPossible):
             number = randint(0, 6) 
             isPossible = self.isPossibleMove(board, number)
-        return number
+        return None, number
 
 

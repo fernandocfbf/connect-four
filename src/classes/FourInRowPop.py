@@ -1,15 +1,9 @@
-#
-# This class implements all the rules
-# and control for the game 4-in-row
-#
-# To understand how this game works: https://www.coolmathgames.com/0-4-in-a-row
-#
-
 import numpy as np
 import datetime
+from src.classes.RandomPlayer import RandomPlayer
 from termcolor import colored
 
-class FourInRow:
+class FourInRowPop:
 
     def __init__(self, player1, player2):
         self.board = np.zeros( (6,7) )
@@ -26,7 +20,7 @@ class FourInRow:
     def printBoard(self): 
         for lin in range(0,6):
             for col in range(0,7):
-                print(FourInRow.printSymbol(self.board[lin][col])+" | ", end='')
+                print(FourInRowPop.printSymbol(self.board[lin][col])+" | ", end='')
             print('')    
         print('\n')
 
@@ -35,15 +29,29 @@ class FourInRow:
     # and column between 0 and 6
     #
     def movement(self, player, column):
+        print(column)
         try:
             if(player not in (1,2)):
                 raise Exception('Only players 1 or 2')
-            for i in range(5,-2,-1):
-                if (self.board[i,column] == 0):
-                    break
-            if(i<0):
-                raise Exception('Player '+str(player)+', you can not play in a full column')
-            self.board[i, column] = player
+            
+            if column[0] == None: 
+                # in this case the player is adding a new piece. 
+                for i in range(5,-2,-1):
+                    if (self.board[i,column[1]] == 0):
+                        break
+                if(i<0):
+                    raise Exception('Player '+str(player)+', you can not play in a full column')
+                self.board[i, column[1]] = player
+            else:
+                # the player is popping out a piece in column (column[1])
+                if(self.board[5,column[1]] != player):
+                    raise Exception('Player '+str(player)+', you can not pop out from an empty column nor pop out a piece that is not yours.')
+                i = 5
+                while (self.board[i,column[1]] != 0) and (i >= 1):
+                    self.board[i,column[1]] = self.board[i-1, column[1]]
+                    i = i - 1
+                self.board[i-1,column[1]] == 0 
+
         except IndexError:
             raise Exception('Player '+str(player)+', you only can choose a column between 0 and 6')
 
@@ -65,7 +73,7 @@ class FourInRow:
                 if (counter==3):
                     return True
         # vertically
-        for i in range(7):
+        for i in range(6):
             current=None
             counter = 0
             for j in range(5):
@@ -141,3 +149,10 @@ class FourInRow:
         else:
             print('It is a draw')
             return 'DRAW'
+
+def main():
+    #FourInRowPop(ManualPlayer(), RandomPlayer()).game()
+    FourInRowPop(RandomPlayer(), RandomPlayer()).game()
+
+if __name__ == '__main__':
+    main()
